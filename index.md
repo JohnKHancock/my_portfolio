@@ -11,7 +11,7 @@
 <img src="images/Cyclistic.JPG?raw=true"/>
 
 ---
-[UC San Diego (Coursera) Final Project - Citibike Bike Share]()
+[UC San Diego (Coursera) Final Project - Citibike Bike Share](/pdf/Case Study Citibike.pdf)
 <br>
 [Tableau Visualization](https://public.tableau.com/app/profile/john.k.hancock/viz/CAPSTONE_TABLEAU/Presentation)
 <br>
