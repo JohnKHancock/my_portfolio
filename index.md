@@ -13,7 +13,7 @@
 ---
 [UC San Diego (Coursera) Final Project - Citibike Bike Share]()
 <br>
-<img src="images/2088655_061217-wabc-shutterstock-citi-bike-citibike-generic-img.jpg?raw=true"/>
+<img src="images/2088655_061217-wabc-shutterstock-citi-bike-citibike-generic-img.jpg?raw=true",width="50" height="60"/>
 
 ---
 
