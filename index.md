@@ -4,12 +4,12 @@
 
 ### Category Name 1 
 
-[Project 1 Title](/sample_page)
-<img src="images/dummy_thumbnail.jpg?raw=true"/>
+[Google Analytics (Coursera) Capstone Project](/pdf/sample_presentation.pdf)
+<img src="images/Cyclistic.JPG?raw=true"/>
 
 ---
-[Project 2 Title](/pdf/sample_presentation.pdf)
-<img src="images/dummy_thumbnail.jpg?raw=true"/>
+[UC San Diego (Coursera) Final Project ]()
+<img src="images/2088655_061217-wabc-shutterstock-citi-bike-citibike-generic-img.jpg?raw=true"/>
 
 ---
 [Project 3 Title](http://example.com/)
