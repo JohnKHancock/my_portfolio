@@ -2,22 +2,21 @@
 
 ---
 
-### Category Name 1 
+### Data Analysis Projects
 
-[Google Analytics (Coursera) Capstone Project](/pdf/sample_presentation.pdf)
+[Google Analytics (Coursera) Capstone Project](/pdf/Case-Study Cyclistic Bike Data.pdf)
 <img src="images/Cyclistic.JPG?raw=true"/>
 
 ---
-[UC San Diego (Coursera) Final Project ]()
+[UC San Diego (Coursera) Final Project - Citibike Bike Share]()
 <img src="images/2088655_061217-wabc-shutterstock-citi-bike-citibike-generic-img.jpg?raw=true"/>
 
 ---
-[Project 3 Title](http://example.com/)
-<img src="images/dummy_thumbnail.jpg?raw=true"/>
+
 
 ---
 
-### Category Name 2
+### CUNY Projects
 
 - [Project 1 Title](http://example.com/)
 - [Project 2 Title](http://example.com/)
