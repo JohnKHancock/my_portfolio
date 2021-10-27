@@ -4,7 +4,11 @@ description: > # your text below (remove <br> elements if you don't need line br
   <br>MBA, PMP, CSM (He/Him)<br>
   <br>
   <br>Master of Data Science CUNY 2021<br>
+  <br>
+  <img src="google-data-analytics-certificate.png?raw=true"/>
+  <br>
   <a href="https://www.linkedin.com/in/john-k-hancock-mba-pmp/">View My LinkedIn Profile</a> 
-  
+  <br>
+  <img src="project-management-professional-pmp.png?raw=true"/>
 theme: jekyll-theme-minimal
 google_analytics: UA-000000-0 # your Google Analytics tracking ID here
