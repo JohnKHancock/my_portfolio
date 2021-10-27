@@ -13,8 +13,10 @@
 ---
 [UC San Diego (Coursera) Final Project - Citibike Bike Share]()
 <br>
+[Tableau Visualization](https://public.tableau.com/app/profile/john.k.hancock/viz/CAPSTONE_TABLEAU/Presentation)
+<br>
 <img src="images/2088655_061217-wabc-shutterstock-citi-bike-citibike-generic-img.jpg?raw=true" width="200" height="100" />
-
+<br>
 ---
 
 
