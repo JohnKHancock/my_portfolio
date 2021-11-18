@@ -1,9 +1,12 @@
 ## Portfolio
+---
+
+### Data Exploration and Analysis of the Impact of Racial Integration on MLB<br>
+[Data Exploration and Analysis of the Impact of Racial Integration on MLB](/Data Exploration and Analysis of the Impact of Racial Integration on MLB/Data Exploration and Analysis of the Impact of Racial Integration on MLB.ipynb){:target="_blank"}
 
 ---
 
-### Data Analysis Projects
-
+### Data Analysis and Tableau Visualization Projects<br>
 [Google Analytics (Coursera) Capstone Project](/pdf/Case-Study Cyclistic Bike Data.pdf){:target="_blank"}
 <br>
 [Tableau Visualization](https://public.tableau.com/app/profile/john.k.hancock/viz/Google_Capstone_16352021800480/Presentation){:target="_blank"}
