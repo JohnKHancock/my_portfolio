@@ -2,7 +2,7 @@
 ---
 
 ### Data Exploration and Analysis of the Impact of Racial Integration on MLB<br>
-[Data Exploration and Analysis of the Impact of Racial Integration on MLB](/Data Exploration and Analysis of the Impact of Racial Integration on MLB/Data Exploration and Analysis of the Impact of Racial Integration on MLB.ipynb){:target="_blank"}
+[Data Exploration and Analysis of the Impact of Racial Integration on MLB](/Data Exploration and Analysis of the Impact of Racial Integration on MLB/Data Exploration and Analysis of the Impact of Racial Integration on MLB.ipynb){:target="https://github.com/JohnKHancock/my_portfolio/blob/main/Data%20Exploration%20and%20Analysis%20of%20the%20Impact%20of%20Racial%20Integration%20on%20MLB/Data%20Exploration%20and%20Analysis%20of%20the%20Impact%20of%20Racial%20Integration%20on%20MLB.ipynb"}
 
 ---
 
