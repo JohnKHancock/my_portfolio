@@ -3,7 +3,8 @@
 
 ### Data Exploration and Analysis of the Impact of Racial Integration on MLB<br>
 [Data Exploration and Analysis of the Impact of Racial Integration on MLB](/pdf/Data Exploration and Analysis of the Impact of Racial Integration on MLB.pdf){:target="_blank"}
-
+<br>
+<img src="images/mlb.png?raw=true"/>
 ---
 
 ### Data Analysis and Tableau Visualization Projects<br>
