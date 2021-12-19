@@ -15,11 +15,10 @@
 <img src="images/Cyclistic.JPG?raw=true"/>
 
 ---
-[UC San Diego (Coursera) Final Project - Citibike Bike Share](/pdf/Case Study Citibike.pdf){:target="_blank"}
+### Data Wrangling OpenStreetMap and MongDB<br>
+[Data Wrangling OpenStreetMap](/pdf/Data Wrangling OpenStreetMap.pdf){:target="_blank"}
 <br>
-[Tableau Visualization](https://public.tableau.com/app/profile/john.k.hancock/viz/CAPSTONE_TABLEAU/Presentation){:target="_blank"}
-<br>
-<img src="images/2088655_061217-wabc-shutterstock-citi-bike-citibike-generic-img.jpg?raw=true" width="200" height="100" />
+<img src="images/OSM_logo.png?raw=true" width="200" height="100" />
 <br>
 ---
 
