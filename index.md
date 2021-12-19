@@ -18,7 +18,7 @@
 ### Data Wrangling OpenStreetMap and MongDB<br>
 [Data Wrangling OpenStreetMap](/pdf/Data Wrangling OpenStreetMap.pdf){:target="_blank"}
 <br>
-<img src="images/OSM_logo.png?raw=true" width="200" height="100" />
+<img src="images/OSM_logo.png?raw=true" width="100" height="100" />
 <br>
 ---
 
