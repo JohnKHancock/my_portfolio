@@ -21,7 +21,11 @@
 <img src="images/OSM_logo.png?raw=true" width="100" height="100" />
 <br>
 ---
-
+### Predictive Factors for ABC Beverage - Regression<br>
+[Predictive Factors for ABC Beverage - Regression](/pdf/Predictive Factors for ABC Beverage - Regression.pdf){:target="_blank"}
+<br>
+<img src="images/OSM_logo.png?raw=true" width="100" height="100" />
+<br>
 
 ---
 
