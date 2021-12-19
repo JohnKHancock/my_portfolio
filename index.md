@@ -7,7 +7,7 @@
 <img src="images/mlb.png?raw=true"/>
 ---
 
-### Data Analysis and Tableau Visualization Projects<br>
+### Data Analysis and Tableau Visualization Project<br>
 [Google Analytics (Coursera) Capstone Project](/pdf/Case-Study Cyclistic Bike Data.pdf){:target="_blank"}
 <br>
 [Tableau Visualization](https://public.tableau.com/app/profile/john.k.hancock/viz/Google_Capstone_16352021800480/Presentation){:target="_blank"}

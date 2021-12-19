@@ -1,0 +1,5 @@
+Link to the OpenStreetMap export for Detoit, MI
+
+https://www.openstreetmap.org/relation/134591#map=12/42.3527/-83.0992
+
+I chose Detroit because I wanted to choose a major urban area that is poor.  I wanted to see how good the map would be for an area that's struggling economically.
