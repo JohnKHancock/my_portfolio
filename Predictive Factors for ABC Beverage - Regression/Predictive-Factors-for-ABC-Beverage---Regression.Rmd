@@ -1,0 +1,1195 @@
+---
+title: "Project Two:  Understanding Predictive Factors for ABC Beverage"
+author: "Salma Elshahawy, John K. Hancock, and Farhana Zahir"
+date: "5/23/2021"
+output:
+  html_document:
+    code_download: yes
+    code_folding: show
+    highlight: pygments
+    number_sections: no
+    theme: cerulean
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(ggcorrplot)
+library(caret)
+library(elasticnet)
+library(lars)
+library(pls)
+library(naniar)
+library(heatmaply)
+library(VIM)
+library(ICSNP)
+library(rsample)
+library(glmnet)
+library("mice")
+library("e1071")
+library(RANN)
+library(earth)
+library(kernlab)
+library(nnet)
+
+library(Cubist)
+library(gbm)
+library(ipred)
+library(party)
+library(partykit)
+library(randomForest)
+library(rpart)
+library(RWeka)
+
+library(reshape2)
+library(DMwR2)
+library(vip)
+library(httr)
+
+```
+
+## OVERVIEW
+
+The data science team of Salma Elshahawy, John K. Hancock, and Farhana Zahir have prepared the following technical report to address the issue of understanding ABC's manufacturing process and its predictive factors. This report is the predictive value of the PH. 
+
+The report consists of the following:
+
+<b><u>PART 1: THE DATASETS </u></b>
+
+<b><u>PART 2: DATA PREPARATION </u></b>
+
+<b><u>PART 3: EXPERIMENTATION </u></b> 
+
+<b><u>PART 4: EVALUATE MODELS </u></b> 
+
+<u><b>PART 5: USE THE BEST MODEL TO FORECAST PH</u></b> 
+
+<u><b>PART 6: CONCLUSIONS </u></b> 
+
+
+## PART 1: THE DATASETS
+
+In this section, we did the following:
+   
+   
+        Import the Datasets
+        Evaluate the Dataset
+        Devise a Data Preparation Strategy
+
+
+
+### Import the Data
+
+The excel files, StudentData.xlsx and StudentEvaluation.xlsx, are hosted on the team's Github page.  Here, they're downloaded and read into the dataframes, beverage_training_data and beverage_test_data. 
+
+```{r}
+temp_train_file <- tempfile(pattern="StudentData", fileext = ".xlsx")
+temp_eval_file <- tempfile(pattern="StudentEvaluation", fileext = ".xlsx")
+
+student_train <-  "https://github.com/JohnKHancock/CUNY_DATA624_Project2/blob/main/raw/StudentData.xlsx?raw=true"
+student_eval <-   "https://github.com/JohnKHancock/CUNY_DATA624_Project2/blob/main/raw/StudentEvaluation.xlsx?raw=true"
+
+
+
+student_data <- GET(student_train,
+               authenticate(Sys.getenv("GITHUB_PAT"), ""),
+               write_disk(path = temp_train_file))
+
+student_eval <-  GET(student_eval,
+               authenticate(Sys.getenv("GITHUB_PAT"), ""),
+               write_disk(path = temp_eval_file))
+
+
+
+```
+
+```{r include=FALSE}
+beverage_training_data <- readxl::read_excel(temp_train_file,skip=0)
+```
+
+
+```{r, include=FALSE}
+beverage_test_data <- readxl::read_excel(temp_eval_file, skip=0)
+
+```
+
+
+
+
+
+### Evaluate the Dataset
+After importing the Beverage Training dataset, we see that there are 2,571 observations consisiting of 32 predictor variables and one dependent variable, PH. We also see that "Brand Code" is a factor variable that will need to be handled as well as several observations with a number of NAs.
+
+For the Beverage Testing dataset, we see 267 observations, the 32 predictors, and the dependent variable PH which is all NAs.  This is the data that we will have to predict. Same as the training set, We also see that "Brand Code" is a character variable that will need to be handled as well as several observations with a number of NAs. 
+
+
+<b>Beverage Training Data</b>
+
+```{r}
+dim(beverage_training_data)
+```
+
+
+```{r}
+typeof(beverage_training_data$`Brand Code`)
+```
+
+
+```{r include=FALSE}
+summary(beverage_training_data)
+```
+
+
+<b>Beverage Testing Data</b>
+
+```{r include=FALSE}
+glimpse(beverage_test_data)
+```
+
+```{r include=FALSE}
+summary(beverage_test_data)
+```
+
+
+### Devise a Data Preparation Strategy
+
+After analyzing the data, we devised the following processes in order to prepare the data for analysis
+
+
+A. Isolate predictors from the dependent variable 
+
+B. Correct the Predictor Names 
+
+C. Create a data frame of numeric values only 
+
+D. Identify and Impute Missing Data 
+
+E. Identify and Address Outliers
+
+F. Check for and remove correlated predictors 
+
+G. Identify Near Zero Variance Predictors 
+
+H. Impute missing values and Create dummy variables for Brand.Code 
+
+I. Impute missing data for Dependent Variable PH
+
+
+## PART 2: DATA PREPARATION
+
+
+### A. Isolate predictors from the dependent variables
+
+For the training set, remove the predictor variable, PH and store it into the variable, y_train.
+
+```{r}
+predictors <- subset(beverage_training_data, select = -c(PH))
+predictors_evaluate <- subset(beverage_test_data, select = -c(PH)) 
+y_train <- as.data.frame(beverage_training_data$PH)
+colnames(y_train) <- c("PH")
+```
+
+
+### B. Correct the Predictor Names
+
+Correct the space in the predictor names using the make.names function.  The space in the names may be problematic. This was applied to both datasets. 
+
+```{r}
+colnames(predictors)
+```
+
+
+```{r}
+colnames(predictors)<- make.names(colnames(predictors))
+colnames(predictors)
+```
+
+```{r}
+colnames(predictors_evaluate)<- make.names(colnames(predictors_evaluate))
+colnames(predictors_evaluate)
+```
+
+
+### C. Create a data frame of numeric values only
+
+We saw earlier that Brand.Code is a categorical value.  Because of that we subset the dataframe to remove it. We will handle this variable later.
+
+```{r}
+num_predictors <- subset (predictors, select = -Brand.Code)
+num_predictors <- as.data.frame(num_predictors)
+
+```
+
+
+### D. Identify and Impute Missing Data 
+
+The predictor MFR has the most missing values at 212.  I used knn imputation to handle missing values.  After the knn imputation, there are still missing values for Brand.Code which will be handled in a later section.
+
+<b>Training Data</b>
+```{r include=FALSE}
+missingData <- as.data.frame(colSums(is.na(num_predictors)))
+colnames(missingData) <- c("NAs") 
+missingData <- cbind(Predictors = rownames(missingData), missingData)
+rownames(missingData) <- 1:nrow(missingData)
+missingData <- missingData[missingData$NAs != 0,] %>% 
+                arrange(desc(NAs))
+head_missing <- head(missingData)
+```
+
+
+
+
+```{r, echo=FALSE}
+knitr::kable(head_missing,"markdown", align = 'c')
+```
+
+```{r  fig.height=7, fig.align='center'}
+missingData  %>%
+  ggplot() +
+    geom_bar(aes(x=reorder(Predictors,NAs), y=NAs, fill=factor(NAs)), stat = 'identity', ) +
+    labs(x='Predictor', y="NAs", title='Number of missing values') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) + coord_flip() 
+```
+
+
+
+```{r, include=FALSE}
+preprocessing <- preProcess(as.data.frame(num_predictors), method = "knnImpute") 
+predictors_imputed <- predict(preprocessing, num_predictors)
+
+
+```
+
+
+
+
+```{r}
+missingData <- as.data.frame(colSums(is.na(predictors_imputed)))
+colnames(missingData) <- c("NAs") 
+missingData <- cbind(Predictors = rownames(missingData), missingData)
+rownames(missingData) <- 1:nrow(missingData)
+missingData <- missingData[missingData$NAs != 0,] %>% 
+                arrange(desc(NAs))
+head(missingData)
+```
+### E. Identify Skewness and Outliers
+
+Next we looked at the distributions of the numeric variables. There are only four predictors that are normally distributed. The box plots show a high number of outliers in the data. To correct for this, the pre processing step of center and scale was used. We centered and scaled these distributions. 
+
+```{r message=FALSE, warnings=FALSE, fig.height= 20, fig.width= 15, fig.align='center'}
+
+par(mfrow = c(3, 3))
+datasub = melt(predictors_imputed) 
+suppressWarnings(ggplot(datasub, aes(x= value)) + 
+                   geom_density(fill='orange') + facet_wrap(~variable, scales = 'free') )
+```
+
+```{r message=FALSE, warnings=FALSE, fig.height= 20, fig.width= 15, fig.align='center'}
+ggplot(data = datasub , aes(x=variable, y=value)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=3, outlier.size=8,aes(fill=variable)) +
+  coord_flip() + theme(legend.position = "none")
+  
+
+```
+
+
+```{r}
+preprocessing <- preProcess(as.data.frame(predictors_imputed), method = c("center", "scale")) 
+preprocessing 
+num_predictors_01 <- predict(preprocessing, predictors_imputed)
+```
+
+
+```{r}
+num_predictors_02 <- spatialSign(num_predictors_01)
+num_predictors_02 <- as.data.frame(num_predictors_02)
+
+```
+
+
+
+
+```{r message=FALSE, warnings=FALSE, fig.height=20, fig.width= 15, fig.align='center'}
+
+par(mfrow = c(3, 3))
+datasub = melt(num_predictors_02) 
+suppressWarnings(ggplot(datasub, aes(x= value)) + 
+                   geom_density(fill='blue') + facet_wrap(~variable, scales = 'free') )
+```
+
+
+```{r message=FALSE, warnings=FALSE, fig.height=20, fig.width= 15, fig.align='center'}
+ggplot(data = datasub , aes(x=variable, y=value)) + 
+  geom_boxplot(outlier.colour="red", outlier.shape=3, outlier.size=8,aes(fill=variable)) +
+  coord_flip() + theme(legend.position = "none")
+  
+
+```
+
+
+
+### F. Check for and remove correlated predictors
+
+We identified five variables that are highly correlated with other variables at above .9. Highly correlated variables lead to Multicollinearity which reduces the precision of the estimate coefficients and weakens the statistical power of regression models.
+
+```{r}
+tooHigh <- findCorrelation(cor(num_predictors_02, use="na.or.complete"), cutoff = .9, names = TRUE)
+tooHigh
+```
+
+
+```{r fig.height=10, fig.width= 10, fig.align='center'}
+
+corr <- round(cor(num_predictors_02, use="na.or.complete"), 1)
+
+ggcorrplot(corr,
+           type="lower",
+           lab=TRUE,
+           lab_size=3,
+           method="circle",
+           colors=c("tomato2", "white", "springgreen3"),
+           title="Correlation of variables in Training Data Set",
+           ggtheme=theme_bw)
+
+```
+
+```{r}
+num_predictors_02[ ,c(tooHigh)] <- list(NULL)
+colnames(num_predictors_02)
+```
+
+### G. Identify Near Zero Variance Predictors
+
+Remove the zero variance predictor. There are no near zero variance predictors
+
+```{r}
+caret::nearZeroVar(num_predictors_02, names = TRUE)
+```
+
+
+### H. Impute missing values and Create dummy variables for Brand.Code
+
+Earlier, we saw that there are 120 missing values for Brand.Code, a factor variable. The imputation strategy here is to impute with the most frequent value, "B". After imputation, Brand.Code was converted to dummy variables. The converted Brand.Code predictor is joined to the num_predictors_02. 
+
+```{r}
+BrandCodeNAs <- predictors$Brand.Code[is.na(predictors$Brand.Code ==TRUE)]
+length(BrandCodeNAs)
+```
+
+
+```{r}
+predictors$Brand.Code <- as.factor(predictors$Brand.Code)
+levels(predictors$Brand.Code )
+```
+
+
+```{r}
+table(predictors$Brand.Code)
+
+```
+
+
+```{r}
+
+predictors$Brand.Code[is.na(predictors$Brand.Code)] = "B"
+
+```
+
+
+```{r}
+predictors$Brand.Code[is.na(predictors$Brand.Code)]
+```
+
+
+```{r}
+mod<- dummyVars(~Brand.Code,
+          data=predictors,
+          levelsOnly = FALSE)
+mod
+```
+
+
+```{r include=FALSE}
+dummies <- as.data.frame(predict(mod, predictors))
+head_dumm <- head(dummies,6)
+```
+
+
+
+```{r, echo=FALSE}
+knitr::kable(head_dumm,"markdown", align = 'c')
+```
+
+
+
+```{r}
+eval.data <- cbind(dummies, num_predictors_02)
+
+```
+
+
+
+### I. Impute missing data for Dependent Variable PH
+
+The final step is to impute missing values for the dependent variable, PH, with the median for PH. 
+
+
+```{r}
+y_train[is.na(y_train$PH),] <- median(y_train$PH,na.rm=TRUE)
+```
+
+
+
+```{r}
+processed.train <- cbind(y_train, eval.data)
+
+```
+
+
+```{r}
+missingData <- as.data.frame(colSums(is.na(processed.train)))
+colnames(missingData) <- c("NAs") 
+missingData <- cbind(Predictors = rownames(missingData), missingData)
+rownames(missingData) <- 1:nrow(missingData)
+missingData <- missingData[missingData$NAs != 0,] %>% 
+                arrange(desc(NAs))
+head(missingData)
+```
+
+
+## PART 3: EXPERIMENTATION 
+
+
+<b><u>Split the Time Series</b></u>
+
+Before we begin with the experimentation, We split the training data into train and test sets 
+
+  
+```{r}
+evaluation.split <- initial_split(processed.train, prop = 0.7, strata = "PH")
+train <- training(evaluation.split)
+test <- testing(evaluation.split)
+```
+
+
+<b><u>Modeling</b></u>
+
+We examined 12 models.  We looked at Linear Models, Non Linear Regression Models, and Tree Based Models. For all of the models, MNF.Flow was the most important predictor with the exception of the bag tree model. Other consistently important predictors include predictor, Brand C and D. Residuals for each model appear random with no discernable patterns. In Part 4, we evaluated the metrics from each model. 
+
+### Linear Models
+
+```{r}
+set.seed(100)
+x_train <- train[, 2:29]
+y_train <- as.data.frame(train$PH)
+colnames(y_train) <- c("PH")
+
+x_test <- test[, 2:29]
+y_test <- as.data.frame(test$PH)
+colnames(y_test) <- c("PH")
+ctrl <- trainControl(method = "cv", number = 10)
+
+```
+
+
+<b><u>Basic linear model</b></u>
+
+```{r message=FALSE, warning=FALSE}
+lmFit1 <- train(x_train, y_train$PH,
+                method = "lm", 
+                trControl = ctrl)
+```
+
+
+```{r}
+summary(lmFit1)
+```
+
+```{r}
+lmFit1$results
+```
+
+```{r}
+varImp(lmFit1)
+```
+
+
+```{r}
+
+plot(residuals(lmFit1) )
+```
+
+
+
+<b><u>Partial Least Squares or PLS</b></u>
+
+```{r}
+set.seed(100)
+plsFit1 <- train(x_train, y_train$PH,
+  method = "pls",
+  tuneLength = 25,
+  trControl = ctrl)
+
+```
+
+
+```{r}
+summary(plsFit1)
+```
+
+
+```{r}
+plot(plsFit1)
+```
+
+
+```{r}
+plsFit1$bestTune
+```
+
+
+
+```{r}
+train_set_results <- plsFit1$results %>% 
+  filter(ncomp==8)
+
+train_set_results
+```
+
+
+```{r}
+varImp(plsFit1)
+```
+
+
+
+```{r}
+plot(residuals(plsFit1) )
+```
+
+
+
+
+
+<b><u>Ridge Regression</b></u>
+
+```{r}
+ridgeGrid <- data.frame(.lambda = seq(0, .1, length = 15))
+
+ridgeRegFit <- train(x_train, y_train$PH,
+                        method = "ridge",
+                        tuneGrid = ridgeGrid,
+                        trControl = ctrl)
+```
+
+
+
+```{r}
+summary(ridgeRegFit)
+```
+
+
+
+```{r}
+plot(ridgeRegFit)
+```
+
+
+```{r}
+ridgeRegFit$bestTune
+```
+```{r}
+train_set_results <- ridgeRegFit$results  
+
+train_set_results[row.names(train_set_results) == 3, ]
+```
+
+
+
+```{r}
+varImp(ridgeRegFit)
+```
+
+
+
+```{r}
+plot(residuals(ridgeRegFit) )
+```
+
+
+
+### Non Linear Regression
+
+<b><u>KNN</b></u>
+
+```{r}
+knnModel <- train(x = x_train, y = y_train$PH,
+                   method = "knn",
+                   tuneLength = 25, 
+                   trControl = ctrl)
+
+knnModel
+```
+
+```{r}
+knnPred <- predict(knnModel, newdata = x_test)
+
+knn_res <- postResample(pred = knnPred, obs = y_test$PH)
+knn_res
+```
+
+```{r}
+varImp(knnModel)
+```
+
+```{r}
+plot(residuals(knnModel))
+```
+
+
+<b><u>Neural Network</b></u>
+
+```{r message=FALSE, warning=FALSE}
+nnetGrid <- expand.grid(.decay = c(0, .01, 1),
+                        .size = c(1:10),
+                        .bag = FALSE)
+set.seed(100)
+nnetTune <- train(x = x_train,
+                  y = y_train$PH,
+                  method = "avNNet",
+                  tuneGrid = nnetGrid,
+                  trControl = ctrl,
+                  linout = FALSE,  trace = FALSE,
+                  MaxNWts = 5* (ncol(x_train) + 1) + 5 + 1,
+                  maxit = 250)
+                  
+```
+
+
+ 
+```{r}
+nnetTune
+```
+
+```{r}
+summary(nnetTune)
+```
+
+
+```{r}
+nnetTune$bestTune
+```
+
+
+```{r}
+nnetPred <- predict(nnetTune, newdata=x_test)
+NNET <- postResample(pred = nnetPred, obs = y_test$PH)
+NNET
+```
+
+```{r}
+plotmo(nnetTune)
+```
+
+```{r}
+varImp(nnetTune)
+```
+
+
+
+<b><u>Multivariate Adaptive Regression Splines (MARS)</u></b>
+
+
+```{r}
+set.seed(100)
+marsGrid <- expand.grid(.degree = 1:2, .nprune = 2:38)
+marsTuned <- train(x = x_train, y =  y_train$PH,
+                  method = "earth", 
+                  tuneGrid = marsGrid,
+                  trControl = ctrl)
+marsTuned
+```
+
+
+
+```{r}
+marsPred <- predict(marsTuned, newdata=x_test)
+MARS <- postResample(pred = marsPred, obs = y_test$PH)
+MARS
+```
+
+
+```{r}
+plotmo(marsTuned)
+```
+
+```{r}
+varImp(marsTuned)
+```
+
+
+```{r}
+plot(residuals(marsTuned))
+```
+
+<b><u> Support Vector Machines (SVM)</u></b>
+
+```{r}
+set.seed(100)
+svmLTuned <- train(x = x_train, y =  y_train$PH,
+                   method = "svmLinear",
+                   tuneLength = 25,
+                   trControl = trainControl(method = "cv"))
+svmLTuned
+```
+
+
+```{r}
+svmLPred <- predict(svmLTuned, newdata=x_test)
+svmL<- postResample(pred = svmLPred, obs = y_test$PH)
+svmL
+```
+
+
+```{r}
+plotmo(svmLTuned)
+```
+
+
+
+```{r}
+varImp(svmLTuned)
+```
+
+
+### Tree Based Models
+
+
+
+```{r  include=FALSE, warning=FALSE, message=FALSE}
+
+                    
+set.seed(100)
+ctreeModel <- train(x = x_train, y =  y_train$PH,
+                    method = "ctree",
+                    tuneLength = 10,
+                    trControl = ctrl
+                    )
+
+
+
+set.seed(100)
+rfModel <- randomForest(x = x_train, y =  y_train$PH,
+                       importance = T,
+                       ntree=1000)
+
+
+set.seed(100)
+baggedTreeModel <- train(x = x_train, y =  y_train$PH,
+                    method = "treebag",
+                    trControl = ctrl,
+                    nbagg = 75,  
+                    control = rpart.control(minsplit = 2, cp = 0)
+              )
+
+
+set.seed(100)
+gbmGrid <- expand.grid(interaction.depth = seq(1, 7, by = 2),
+                        n.trees = c(seq(100, 1000, by = 50)),
+                        shrinkage = c(0.01, .1),
+                        n.minobsinnode = c(5, 10, 15))
+
+set.seed(100)
+gbmModel <- train(x = x_train, y =  y_train$PH,
+                  method = "gbm",
+                  tuneGrid = gbmGrid,
+                  verbose = FALSE,
+                  trControl = ctrl
+                 )
+
+
+cubistGrid <- expand.grid(committees = c(1, 5, 10, 50, 75, 100),
+                          neighbors = c(0, 1, 3, 5, 7, 9))
+
+set.seed(100)
+cubistModel<- train(  x= x_train[, colnames(x_train)],
+                       y = y_train$PH, 
+                       method = "cubist", 
+                       tuneGrid = cubistGrid,
+                       trControl = ctrl
+                      )
+  
+
+
+
+```
+
+
+
+```{r}
+resamples <- resamples( list(CondInfTree =ctreeModel,
+                            BaggedTree = baggedTreeModel,
+                            BoostedTree = gbmModel,
+                            Cubist=cubistModel) )
+summary(resamples)
+```
+
+
+<b><u>Single Tree Models - cTree</b></u>
+
+```{r}
+convert_top_20_to_df <- function(df){
+          df1 <- as.data.frame(df)
+          df1['Predictors']  <- rownames(df)
+          colnames(df1) <- c("Overall", "Predictors")
+          rownames(df1) <- 1:nrow(df1)
+          
+          return (df1)
+}
+```
+
+
+
+```{r}
+plot(ctreeModel, main = "Single Tree Model (cTree)")
+```
+
+```{r}
+ctree_20 <- varImp(ctreeModel)
+ctree_20 <- ctree_20$importance %>% 
+  arrange(desc(Overall)) 
+ctree_20 <-   head(ctree_20,20)
+ctree_20
+```
+
+
+```{r}
+ctree_20_df<- convert_top_20_to_df(ctree_20)
+
+ctree_20_df %>% 
+            arrange(Overall)%>% 
+            mutate(name = factor(Predictors, levels=c(Predictors))) %>% 
+            ggplot(aes(x=name, y=Overall)) +
+            geom_segment(aes(xend = Predictors, yend = 0)) +
+            geom_point(size = 4, color = "blue") + 
+            theme_minimal() + 
+            coord_flip() +
+            labs(title="rPart Predictor Variable Importance",
+               y="rPart Importance", x="Predictors") +
+            scale_y_continuous()
+```
+
+
+
+```{r}
+cTreePred <- predict(ctreeModel, newdata=x_test)
+cTreePred <- postResample(pred = cTreePred, obs = y_test$PH)
+cTreePred
+```
+
+
+<b><u>Bagged Trees - baggedTreeModel </b></u>
+
+
+```{r}
+baggedTreeModel_20 <- varImp(baggedTreeModel)
+baggedTreeModel_20 <- baggedTreeModel_20$importance %>% 
+  arrange(desc(Overall)) 
+baggedTreeModel_20 <-   head(baggedTreeModel_20,20)
+baggedTreeModel_20
+```
+
+
+```{r}
+baggedTreeModel_20_df<- convert_top_20_to_df(baggedTreeModel_20)
+
+baggedTreeModel_20_df %>% 
+            arrange(Overall)%>% 
+            mutate(name = factor(Predictors, levels=c(Predictors))) %>% 
+            ggplot(aes(x=name, y=Overall)) +
+            geom_segment(aes(xend = Predictors, yend = 0)) +
+            geom_point(size = 4, color = "green") + 
+            theme_minimal() + 
+            coord_flip() +
+            labs(title="baggedTreeModel Predictor Variable Importance",
+               y="baggedTreeModel Importance", x="Predictors") +
+            scale_y_continuous()
+```
+
+
+
+```{r}
+baggedTreeModelPred <- predict(baggedTreeModel, newdata=x_test)
+baggedTreeModelPred <- postResample(pred = baggedTreeModelPred, obs = y_test$PH)
+baggedTreeModel
+```
+
+
+
+<b><u>Random Forest - rfModel </b></u>
+
+```{r}
+rfModel_20 <- varImp(rfModel)
+rfModel_20 <- rfModel_20 %>% 
+  arrange(desc(Overall)) 
+rfModel_20 <-   head(rfModel_20,20)
+rfModel_20
+```
+
+
+```{r}
+rfModel_20_df<- convert_top_20_to_df(rfModel_20)
+
+rfModel_20_df %>% 
+            arrange(Overall)%>% 
+            mutate(name = factor(Predictors, levels=c(Predictors))) %>% 
+            ggplot(aes(x=name, y=Overall)) +
+            geom_segment(aes(xend = Predictors, yend = 0)) +
+            geom_point(size = 4, color = "purple") + 
+            theme_minimal() + 
+            coord_flip() +
+            labs(title="rfModel Predictor Variable Importance",
+               y="rfModel Importance", x="Predictors") +
+            scale_y_continuous()
+```
+
+
+
+```{r}
+rfModelPred <- predict(rfModel, newdata=x_test)
+rfModelPred <- postResample(pred = rfModelPred, obs = y_test$PH)
+rfModelPred
+```
+
+
+
+
+
+ <b><u>Gradient Boost Model - gbmModel  </b></u>
+
+```{r}
+gbmModel_20 <- varImp(gbmModel)
+gbmModel_20 <- gbmModel_20$importance %>% 
+  arrange(desc(Overall)) 
+gbmModel_20 <-   head(gbmModel_20,20)
+gbmModel_20
+```
+
+
+```{r}
+gbmModel_20_df<- convert_top_20_to_df(gbmModel_20)
+
+gbmModel_20_df %>% 
+            arrange(Overall)%>% 
+            mutate(name = factor(Predictors, levels=c(Predictors))) %>% 
+            ggplot(aes(x=name, y=Overall)) +
+            geom_segment(aes(xend = Predictors, yend = 0)) +
+            geom_point(size = 4, color = "gold") + 
+            theme_minimal() + 
+            coord_flip() +
+            labs(title="gbmModel Predictor Variable Importance",
+               y="gbmModel Importance", x="Predictors") +
+            scale_y_continuous()
+```
+
+
+
+```{r}
+gbmModelPred <- predict(gbmModel, newdata=x_test)
+gbmModelPred<- postResample(pred = gbmModelPred, obs = y_test$PH)
+gbmModelPred
+```
+
+
+ <b><u>Cubist Model - cubistModel  </b></u>
+
+```{r}
+cubistModel_20 <- varImp(cubistModel)
+cubistModel_20 <- cubistModel_20$importance %>% 
+  arrange(desc(Overall)) 
+cubistModel_20 <-   head(cubistModel_20,20)
+cubistModel_20
+```
+
+
+```{r}
+cubistModel_20_df<- convert_top_20_to_df(cubistModel_20)
+
+cubistVisualMostImportant <- cubistModel_20_df %>% 
+                                arrange(Overall)%>% 
+                                mutate(name = factor(Predictors, levels=c(Predictors))) %>% 
+                                ggplot(aes(x=name, y=Overall)) +
+                                geom_segment(aes(xend = Predictors, yend = 0)) +
+                                geom_point(size = 4, color = "pink") + 
+                                theme_minimal() + 
+                                coord_flip() +
+                                labs(title="cubistModel Predictor Variable Importance",
+                                   y="cubistModel Importance", x="Predictors") +
+                                scale_y_continuous()
+
+cubistVisualMostImportant
+```
+
+
+
+```{r}
+cubistModelPred <- predict(cubistModel, newdata=x_test)
+cubistModelPred<- postResample(pred = cubistModelPred, obs = y_test$PH)
+cubistModelPred
+```
+
+```{r}
+plot(residuals(cubistModel))
+```
+```{r}
+plotmo(cubistModel)
+```
+
+
+
+
+
+## PART 4: EVALUATE MODELS
+
+From our experimentation with 12 different models, we saw that the Cubist model had the lowest RMSE (0.10976) value as well as the lowest MAE value (0.081). It also had the highest Rsquared value (0.601).  
+
+
+```{r include=FALSE}
+pls_results <- plsFit1$results %>% 
+  filter(ncomp ==8) %>% 
+  select(RMSE, Rsquared, MAE)
+```
+
+```{r include=FALSE}
+ridge_results <- train_set_results %>% 
+                  filter(row.names(train_set_results) == 3)%>% 
+                  select(RMSE, Rsquared, MAE)
+
+```
+
+
+```{r include=FALSE}
+knnModel_res <- knnModel$results %>% 
+                filter(k==7) %>% 
+                select(RMSE, Rsquared, MAE)
+
+
+```
+
+
+
+
+
+```{r include=FALSE}
+
+linear_Model_res <- c('Linear Model', lmFit1$results$RMSE, lmFit1$results$Rsquared, lmFit1$results$MAE)
+partial_least_square_res <- c('Partial Least Square', pls_results$RMSE, pls_results$Rsquared, pls_results$MAE)
+ridge_res <- c('Ridge Regression', ridge_results$RMSE, ridge_results$Rsquared, ridge_results$MAE)
+
+knn_res <- c('KNN', knnModel_res$RMSE, knnModel_res$Rsquared, knnModel_res$MAE)
+nn_res <- c('Neural Network', NNET[1], NNET[2], NNET[3])
+mars_res <- c('Multivariate Adaptive Regression Spline', MARS[1], MARS[2], MARS[3])
+svmL_res <- c('Support Vector Machines - Linear', svmL[1], svmL[2], svmL[3])
+
+bTM_res <- c('baggedTree Model', baggedTreeModel$results$RMSE, baggedTreeModel$results$Rsquared, baggedTreeModel$results$MAE)
+cTreeModel_res <- c('cTree Model', cTreePred[1], cTreePred[2], cTreePred[3])
+randomForestModelPred_res <- c('Random Forest Model', rfModelPred[1], rfModelPred[2], rfModelPred[3])
+gradientBoostModelPred_res <- c('Gradient Boost Model', gbmModelPred[1], gbmModelPred[2], gbmModelPred[3])
+cubistModelPred_res <- c('Cubist Model',cubistModelPred[1], cubistModelPred[2], cubistModelPred[3])
+
+results<- as.data.frame(rbind(linear_Model_res,
+                              partial_least_square_res,
+                              ridge_res,
+                              knn_res,
+                              nn_res,
+                              mars_res,
+                              svmL_res,
+                              cTreeModel_res,
+                              bTM_res,
+                              randomForestModelPred_res,
+                              gradientBoostModelPred_res,
+                              cubistModelPred_res))
+colnames(results) <- c('Model', 'RMSE', 'Rsquared', 'MAE')
+row.names(results) <- c(1:nrow(results))
+results_table <- results %>% 
+  arrange(RMSE)
+```
+
+
+
+
+```{r}
+knitr::kable(results_table,"markdown")
+```
+
+
+
+
+
+
+## PART 5: USE THE BEST MODEL TO FORECAST PH
+
+We will use the Cubist model against the Student evaluation data and make predictions of the PH variable. 
+
+First, as we did with the Student train data, we have to convert the Brand.Code categorical value in the Student evaluation data to Dummy variables. 
+
+
+```{r}
+mod2<- dummyVars(~Brand.Code,
+          data=predictors_evaluate,
+          levelsOnly = FALSE)
+mod2
+```
+
+
+```{r}
+dummies2 <- as.data.frame(predict(mod, predictors_evaluate))
+predictors_evaluate2 <- subset(predictors_evaluate, select = -c(Brand.Code))
+predictors_evaluate2 <- cbind(dummies2,predictors_evaluate)
+
+```
+
+
+```{r }
+cubistPred <- round(predict(cubistModel, newdata=predictors_evaluate2),2)
+head_predictions <- head(cubistPred,10)
+```
+
+
+
+```{r, echo=FALSE}
+knitr::kable(head_predictions,"markdown")
+```
+
+```{r}
+exported_predictions <- cbind(cubistPred,predictors_evaluate)
+names(exported_predictions)[1] <- "Predicted PH"
+```
+
+
+## PART 6: CONCLUSIONS
+
+The data science team found that the Cubist model is the best for predicting the PH value. The most important predictors from this model are shown in the visualization below. The top five predictors are Mnf.Flow, Density, Temperature, Pressure.Vacuum, and Filler Level. Two discrete categorical factors, Brand Codes C and D, are also in the most important predictors. 
+
+We have exported the predicted PH values in the attached excel file. 
+
+
+```{r}
+cubistVisualMostImportant
+```
+
+Note: Uncomment out the code below and update the path to make sure that the data exports to your local path. 
+
+```{r}
+#write.csv(exported_predictions, "StudentEval_PH_Forecast.csv")
+```
+
